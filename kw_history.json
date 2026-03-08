@@ -1,0 +1,74 @@
+[
+  {
+    "id": "1772986491732",
+    "name": "TEst 1 Boolean",
+    "created_at": "2026-03-08 17:14:51",
+    "updated_at": "2026-03-08 17:14:51",
+    "boolean": "(\"advanced interface framework\" OR Aif OR \"advanced-interface-framework\") AND (Spezialist OR Berater OR Consultant OR Beratungs OR Beraterin OR Expertin OR Betreuerin OR Administrator OR administratorin OR Analytiker OR Admin OR Experte OR \"Subject Matter Expert\" OR Beratung OR Administration OR Betreuer OR Analyst OR Konsultiert OR Engineer OR Specialist OR Konsultieren OR Enginer OR Enginner OR Eng OR Engineering OR modulberater OR modulberaterin OR Modulbetreuer OR Modulbetreuerin OR \"module owner\" OR modulverantwortlicher OR \"modul verantwortlicher\" OR Modulverantwortliche OR \"modul verantwortliche\" OR \"Product Owner\" OR Spezialistin)",
+    "state": {
+      "keywords_groups": [
+        [
+          13116
+        ],
+        [
+          13090
+        ]
+      ],
+      "kw_term_groups": [],
+      "kw_not_cids": []
+    },
+    "summary": {
+      "category_groups": [
+        {
+          "cids": [
+            13116
+          ],
+          "names": [
+            "NN - AIF"
+          ],
+          "is_not": false
+        },
+        {
+          "cids": [
+            13090
+          ],
+          "names": [
+            "NN - Berater / Consultant - German"
+          ],
+          "is_not": false
+        }
+      ],
+      "term_groups": []
+    }
+  },
+  {
+    "id": "1772986202825",
+    "name": "Test Boolean 1",
+    "created_at": "2026-03-08 17:10:02",
+    "updated_at": "2026-03-08 17:39:15",
+    "boolean": "(\"advanced interface framework\" OR Aif OR \"advanced-interface-framework\")",
+    "state": {
+      "keywords_groups": [
+        [
+          13116
+        ]
+      ],
+      "kw_term_groups": [],
+      "kw_not_cids": []
+    },
+    "summary": {
+      "category_groups": [
+        {
+          "cids": [
+            13116
+          ],
+          "names": [
+            "NN - AIF"
+          ],
+          "is_not": false
+        }
+      ],
+      "term_groups": []
+    }
+  }
+]
