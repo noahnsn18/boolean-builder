@@ -1825,5 +1825,3 @@ with right_col:
                     st.rerun()
 
         edit_dialog()
-            
-"normalize_search_text      "
