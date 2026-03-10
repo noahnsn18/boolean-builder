@@ -1300,7 +1300,7 @@ with right_col:
             const text = {payload};
 
             function attach() {{
-                const ta = parent.document.querySelector('textarea[aria-label="Output"]');
+                const ta = parent.document.querySelector('textarea');
                 if (!ta) return false;
 
                 const box = ta.closest('[data-testid="stTextArea"]');
@@ -1562,26 +1562,25 @@ with right_col:
 
         if st.session_state.get("hist_copy_text"):
             payload = json.dumps(st.session_state["hist_copy_text"])
+
             components.html(
                 f"""
                 <script>
-                (async () => {{
-                    const text = {payload};
-                    try {{
-                        await parent.navigator.clipboard.writeText(text);
-                    }} catch (e) {{
-                        const tmp = parent.document.createElement('textarea');
-                        tmp.value = text;
-                        parent.document.body.appendChild(tmp);
-                        tmp.select();
-                        parent.document.execCommand('copy');
-                        parent.document.body.removeChild(tmp);
-                    }}
-                }})();
+                const text = {payload};
+
+                navigator.clipboard.writeText(text).catch(() => {{
+                    const tmp = parent.document.createElement('textarea');
+                    tmp.value = text;
+                    parent.document.body.appendChild(tmp);
+                    tmp.select();
+                    document.execCommand('copy');
+                    parent.document.body.removeChild(tmp);
+                }});
                 </script>
                 """,
                 height=0
             )
+
             st.session_state["hist_copy_text"] = ""
 
     if st.session_state.get("kw_reset_create_dialog"):
@@ -1888,4 +1887,4 @@ with right_col:
 
         edit_dialog()
             
-"kw_group_select    "
+"hist_copy_text    "
