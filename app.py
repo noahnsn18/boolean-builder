@@ -969,13 +969,13 @@ with middle_col:
                 elif flt == "CAT_NORMAL":
                     incompatible = (it["kind"] != "cat") or (it["not"] is not False)
 
-                disabled = (flt is not None and incompatible)
+                if flt is not None and incompatible:
+                    continue
 
                 val = st.checkbox(
                     it["label"],
                     value=checked,
-                    key=f"kw_grpchk_{it['key']}",
-                    disabled=disabled
+                    key=f"kw_grpchk_{it['key']}"
                 )
 
                 if val:
