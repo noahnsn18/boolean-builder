@@ -923,25 +923,7 @@ with middle_col:
             # ---- gemeinsame Liste: Term-Gruppen + Kategorien-Gruppen ----
             items = []
 
-            # Term-Gruppen zuerst
-            for gi, g in enumerate(groups):
-                names = []
-                for cid in g:
-                    cat = get_cat(cid)
-                    if cat:
-                        names.append(cat["name"])
-
-                label = "  OR  ".join(names)
-                if group_not[gi]:
-                    label = "NOT " + label
-
-                items.append({
-                    "key": f"cat:{gi}",
-                    "kind": "cat",
-                    "index": gi,
-                    "label": label,
-                    "not": bool(group_not[gi]),
-                })
+            
 
             # Kategorien-Gruppen danach
             def is_group_not(g):
@@ -1883,4 +1865,3 @@ with right_col:
 
         edit_dialog()
             
-"is_group_not      "
