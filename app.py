@@ -384,8 +384,6 @@ if "kw_search_mode" not in st.session_state:
     st.session_state["kw_search_mode"] = "Kategorie"  # oder "Unterkategorie"
 if "kw_last_mode" not in st.session_state:
     st.session_state["kw_last_mode"] = st.session_state["kw_search_mode"]
-if "kw_base_categories" not in st.session_state:
-    st.session_state["kw_base_categories"] = {c["id"]: {"name": c["name"], "terms": list(c["terms"])} for c in CATEGORIES["keywords"]}
 if "kw_show_create_dialog" not in st.session_state:
     st.session_state["kw_show_create_dialog"] = False
 if "kw_create_terms" not in st.session_state:
@@ -811,10 +809,7 @@ with left_col:
 
                 with row2:
                     if st.button("＋", key=f"kw_add_{cid}"):
-                        close_preview()
-                        close_group_preview()
-                        close_edit()
-                        close_history()
+                        close_all_dialogs()
 
                         already = any(cid in g for g in st.session_state["keywords_groups"])
                         if not already:
@@ -947,9 +942,10 @@ with middle_col:
 
             for gi, g in enumerate(groups):
                 names = []
-                for cid in g:
+                for cid in group:
                     cat = get_cat(cid)
-                    names.append(cat["name"])
+                    if cat:
+                        names.append(cat["name"])
 
                 label = "  OR  ".join(names)
                 if group_not[gi]:
@@ -1878,4 +1874,4 @@ with right_col:
 
         edit_dialog()
             
-"row3      "
+"kw_base_categories      "
