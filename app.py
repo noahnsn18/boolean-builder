@@ -987,7 +987,6 @@ with middle_col:
                             st.session_state["kw_group_filter"] = "TERM"
                         else:
                             st.session_state["kw_group_filter"] = "CAT_NOT" if it["not"] else "CAT_NORMAL"
-                        st.rerun()
 
                 else:
                     st.session_state["kw_group_select"].discard(it["key"])
@@ -998,16 +997,22 @@ with middle_col:
                 st.rerun()
 
             # Ausgewählte Keys (z.B. "cat:0", "term:1")
-            chosen = list(st.session_state["kw_group_select"])
+            chosen = sorted(list(st.session_state.get("kw_group_select", set())))
 
-            # Kategorien und Terms trennen
             cat_sel = []
             term_sel = []
+
             for k in chosen:
                 if isinstance(k, str) and k.startswith("cat:"):
-                    cat_sel.append(int(k.split(":")[1]))
+                    try:
+                        cat_sel.append(int(k.split(":")[1]))
+                    except:
+                        pass
                 elif isinstance(k, str) and k.startswith("term:"):
-                    term_sel.append(int(k.split(":")[1]))
+                    try:
+                        term_sel.append(int(k.split(":")[1]))
+                    except:
+                        pass
 
             # Mixed Kind verhindern (Term + Kategorie)
             mixed_kind = bool(cat_sel and term_sel)
@@ -1073,6 +1078,7 @@ with middle_col:
                     st.session_state["kw_group_mode"] = False
                     st.session_state["kw_group_select"] = set()
                     st.session_state["kw_group_filter"] = None
+                    st.rerun()
 
             else:
                 # 2) GRUPPIEREN: mind. 2 Gruppen auswählen
@@ -1112,6 +1118,7 @@ with middle_col:
                     st.session_state["kw_group_mode"] = False
                     st.session_state["kw_group_select"] = set()
                     st.session_state["kw_group_filter"] = None
+                    st.rerun()
 
         else:
             
@@ -1865,3 +1872,4 @@ with right_col:
 
         edit_dialog()
             
+"flt    "
