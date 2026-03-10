@@ -57,11 +57,11 @@ def close_all_dialogs():
 with h1:
     st.title("Boolean Builder")
 with h2:
-    if st.button("🕘", key="btn_open_history_top", help="Suchhistorie öffnen"):
-        close_all_dialogs()
-        st.session_state["kw_show_history_dialog"] = True
-        st.rerun()
-
+    if st.button("🕘", key="btn_open_history_top", use_container_width=True):
+        if not st.session_state.get("kw_show_history_dialog"):
+            close_all_dialogs()
+            st.session_state["kw_show_history_dialog"] = True
+            st.rerun()
 # Testdaten (so wie spaeter aus DB)
 CATEGORIES = {
     "keywords": [
@@ -1012,11 +1012,6 @@ with middle_col:
                 st.session_state["kw_group_filter"] = None
                 st.rerun()
 
-            # Wenn nichts gewählt -> Filter reset
-            if len(st.session_state["kw_group_select"]) == 0 and st.session_state.get("kw_group_filter") is not None:
-                st.session_state["kw_group_filter"] = None
-                st.rerun()
-
             # Ausgewählte Keys (z.B. "cat:0", "term:1")
             chosen = sorted(list(st.session_state.get("kw_group_select", set())))
 
@@ -1893,4 +1888,4 @@ with right_col:
 
         edit_dialog()
             
-"flt    "
+"kw_group_select    "
