@@ -34,6 +34,18 @@ mark {
 
 h1, h2 = st.columns([8, 1])
 
+def close_preview():
+    st.session_state["kw_show_preview"] = False
+    st.session_state["keywords_preview_id"] = None
+def close_group_preview():
+    st.session_state["kw_show_group_preview"] = False
+    st.session_state["keywords_preview_group_index"] = None
+def close_edit():
+    st.session_state["kw_show_edit"] = False
+    st.session_state["kw_edit_cid"] = None
+def close_history():
+    st.session_state["kw_show_history_dialog"] = False
+
 def close_all_dialogs():
     close_preview()
     close_group_preview()
@@ -41,7 +53,7 @@ def close_all_dialogs():
     close_history()
     st.session_state["kw_show_save_dialog"] = False
     st.session_state["kw_show_create_dialog"] = False 
-    
+
 with h1:
     st.title("Boolean Builder")
 with h2:
@@ -434,17 +446,6 @@ import time
 
 if "kw_copy_time" not in st.session_state:
     st.session_state["kw_copy_time"] = 0
-def close_preview():
-    st.session_state["kw_show_preview"] = False
-    st.session_state["keywords_preview_id"] = None
-def close_group_preview():
-    st.session_state["kw_show_group_preview"] = False
-    st.session_state["keywords_preview_group_index"] = None
-def close_edit():
-    st.session_state["kw_show_edit"] = False
-    st.session_state["kw_edit_cid"] = None
-def close_history():
-    st.session_state["kw_show_history_dialog"] = False
 def all_selected_category_ids():
     return [cid for g in st.session_state["keywords_groups"] for cid in g]
 
@@ -817,13 +818,19 @@ with left_col:
 
                         already = any(cid in g for g in st.session_state["keywords_groups"])
                         if not already:
-                            st.session_state["keywords_groups"].append([cid])
+                            st.session_state["keywords_groups"] = [
+                                *st.session_state["keywords_groups"],
+                                [cid]
+                            ]
+                            st.rerun()
 
 
                 with row3:
                     if st.button("👁", key=f"kw_eye_{cid}"):
+                        close_all_dialogs()
                         st.session_state["keywords_preview_id"] = cid
                         st.session_state["kw_show_preview"] = True
+                        st.rerun()
 
     if len(hits) > st.session_state["kw_results_limit"]:
         if st.button("Mehr anzeigen", key="kw_load_more"):
@@ -1175,23 +1182,31 @@ with middle_col:
 
                                 st.rerun()
 
+                    group_key = "_".join(str(cid) for cid in group)
+
                     with eye:
-                        if st.button("👁", key=f"kw_group_eye_{i}"):
+                        if st.button("👁", key=f"kw_group_eye_{group_key}"):
                             close_preview()
                             close_group_preview()
                             st.session_state["keywords_preview_group_index"] = i
                             st.session_state["kw_show_group_preview"] = True
+                            st.rerun()
 
                     with right:
-                        if st.button("X", key=f"kw_group_remove_{i}"):
+                        if st.button("X", key=f"kw_group_remove_{group_key}"):
                             close_preview()
                             close_group_preview()
 
-                            for cid in groups[i]:
-                                st.session_state["kw_not_cids"].discard(cid)
+                            new_groups = []
+                            for idx, g in enumerate(st.session_state["keywords_groups"]):
+                                if idx != i:
+                                    new_groups.append(g)
+                                else:
+                                    for cid in g:
+                                        st.session_state["kw_not_cids"].discard(cid)
 
-                            del groups[i]
-                            st.session_state["keywords_groups"] = groups
+                            st.session_state["keywords_groups"] = new_groups
+                            st.rerun()
 
 
                 
@@ -1863,4 +1878,4 @@ with right_col:
 
         edit_dialog()
             
-"close_all_dialogs      "
+"row3      "
