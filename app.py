@@ -924,14 +924,23 @@ with middle_col:
             items = []
 
             # Term-Gruppen zuerst
-            for ti, tg in enumerate(st.session_state.get("kw_term_groups", [])):
-                label = 'Unterkategorie: "' + '"  OR  "'.join(tg) + '"'
+            for gi, g in enumerate(groups):
+                names = []
+                for cid in g:
+                    cat = get_cat(cid)
+                    if cat:
+                        names.append(cat["name"])
+
+                label = "  OR  ".join(names)
+                if group_not[gi]:
+                    label = "NOT " + label
+
                 items.append({
-                    "key": f"term:{ti}",
-                    "kind": "term",
-                    "index": ti,
+                    "key": f"cat:{gi}",
+                    "kind": "cat",
+                    "index": gi,
                     "label": label,
-                    "not": None,  # bei Term-Gruppen gibt es kein NOT
+                    "not": bool(group_not[gi]),
                 })
 
             # Kategorien-Gruppen danach
@@ -1874,4 +1883,4 @@ with right_col:
 
         edit_dialog()
             
-"kw_base_categories      "
+"enumerate      "
