@@ -952,20 +952,37 @@ with middle_col:
 
             # Filter:
             # None | "TERM" | "CAT_NOT" | "CAT_NORMAL"
-            flt = st.session_state.get("kw_group_filter")
+
+            selected_keys = set(st.session_state.get("kw_group_select", set()))
+
+            # Filter IMMER aus der aktuellen Auswahl ableiten
+            derived_flt = None
+            if selected_keys:
+                first_key = next(iter(selected_keys), None)
+                first_item = next((x for x in items if x["key"] == first_key), None)
+
+                if first_item is not None:
+                    if first_item["kind"] == "term":
+                        derived_flt = "TERM"
+                    else:
+                        derived_flt = "CAT_NOT" if first_item["not"] else "CAT_NORMAL"
+
+            # Session-State sauber synchron halten
+            if st.session_state.get("kw_group_filter") != derived_flt:
+                st.session_state["kw_group_filter"] = derived_flt
+                st.rerun()
+
+            flt = derived_flt
 
             for it in items:
                 checked = it["key"] in st.session_state["kw_group_select"]
 
-                # --- Inkompatibel-Regeln ---
                 incompatible = False
 
                 if flt == "TERM":
                     incompatible = (it["kind"] != "term")
-
                 elif flt == "CAT_NOT":
                     incompatible = (it["kind"] != "cat") or (it["not"] is not True)
-
                 elif flt == "CAT_NORMAL":
                     incompatible = (it["kind"] != "cat") or (it["not"] is not False)
 
@@ -980,16 +997,13 @@ with middle_col:
 
                 if val:
                     st.session_state["kw_group_select"].add(it["key"])
-
-                    # Beim ersten Haken Filter setzen
-                    if flt is None:
-                        if it["kind"] == "term":
-                            st.session_state["kw_group_filter"] = "TERM"
-                        else:
-                            st.session_state["kw_group_filter"] = "CAT_NOT" if it["not"] else "CAT_NORMAL"
-
                 else:
                     st.session_state["kw_group_select"].discard(it["key"])
+
+            # Wenn nichts gewählt -> Filter zurücksetzen
+            if len(st.session_state["kw_group_select"]) == 0 and st.session_state.get("kw_group_filter") is not None:
+                st.session_state["kw_group_filter"] = None
+                st.rerun()
 
             # Wenn nichts gewählt -> Filter reset
             if len(st.session_state["kw_group_select"]) == 0 and st.session_state.get("kw_group_filter") is not None:
