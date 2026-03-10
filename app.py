@@ -947,17 +947,17 @@ with middle_col:
             def is_group_not(g):
                 return len(g) > 0 and all(cid in st.session_state["kw_not_cids"] for cid in g)
 
-            group_not = {gi: is_group_not(g) for gi, g in enumerate(groups)}
-
             for gi, g in enumerate(groups):
                 names = []
-                for cid in group:
+                for cid in g:
                     cat = get_cat(cid)
                     if cat:
                         names.append(cat["name"])
 
+                is_not = is_group_not(g)
+
                 label = "  OR  ".join(names)
-                if group_not[gi]:
+                if is_not:
                     label = "NOT " + label
 
                 items.append({
@@ -965,7 +965,7 @@ with middle_col:
                     "kind": "cat",
                     "index": gi,
                     "label": label,
-                    "not": bool(group_not[gi]),  # True=NOT, False=Normal
+                    "not": is_not,
                 })
 
             # Filter:
@@ -1883,4 +1883,4 @@ with right_col:
 
         edit_dialog()
             
-"enumerate      "
+"is_group_not      "
