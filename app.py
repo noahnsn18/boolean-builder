@@ -33,11 +33,22 @@ mark {
 """, unsafe_allow_html=True)
 
 h1, h2 = st.columns([8, 1])
+
+def close_all_dialogs():
+    close_preview()
+    close_group_preview()
+    close_edit()
+    close_history()
+    st.session_state["kw_show_save_dialog"] = False
+    st.session_state["kw_show_create_dialog"] = False 
+    
 with h1:
     st.title("Boolean Builder")
 with h2:
     if st.button("🕘", key="btn_open_history_top", help="Suchhistorie öffnen"):
+        close_all_dialogs()
         st.session_state["kw_show_history_dialog"] = True
+        st.rerun()
 
 # Testdaten (so wie spaeter aus DB)
 CATEGORIES = {
@@ -438,11 +449,25 @@ def all_selected_category_ids():
     return [cid for g in st.session_state["keywords_groups"] for cid in g]
 
 def get_cat(cid: int):
-    base = st.session_state["kw_base_categories"][cid]
-    ov = st.session_state["kw_overrides"].get(cid)
+    base_all = st.session_state.get("kw_base_categories", {})
+    if cid not in base_all:
+        return None
+
+    base = base_all[cid]
+    ov = st.session_state.get("kw_overrides", {}).get(cid)
+
     if not ov:
-        return {"id": cid, "name": base["name"], "terms": base["terms"]}
-    return {"id": cid, "name": ov.get("name", base["name"]), "terms": ov.get("terms", base["terms"])}
+        return {
+            "id": cid,
+            "name": base["name"],
+            "terms": base["terms"]
+        }
+
+    return {
+        "id": cid,
+        "name": ov.get("name", base["name"]),
+        "terms": ov.get("terms", base["terms"])
+    }
 
 if "kw_show_edit" not in st.session_state:
     st.session_state["kw_show_edit"] = False
@@ -538,13 +563,6 @@ def highlight_query(text: str, query: str) -> str:
         flags=re.IGNORECASE
     )
 
-def close_all_dialogs():
-    close_preview()
-    close_group_preview()
-    close_edit()
-    close_history()
-    st.session_state["kw_show_save_dialog"] = False
-    st.session_state["kw_show_create_dialog"] = False
 
 def build_boolean(groups_local):
             def fmt_term(t: str) -> str:
@@ -607,7 +625,9 @@ with left_col:
 
     with btn_col:
         if st.button("＋ Kategorie", key="kw_create_cat_btn", use_container_width=True):
+            close_all_dialogs()
             st.session_state["kw_show_create_dialog"] = True
+            st.rerun()
 
     mode_now = st.session_state["kw_search_mode"]
 
@@ -813,17 +833,32 @@ with left_col:
 
     # 4) Preview als "Popover" per Dialog (stabil)
 
-    if st.session_state["kw_show_preview"] and st.session_state.get("keywords_preview_id") is not None:
+    pv_id = st.session_state.get("keywords_preview_id")
+
+    if st.session_state["kw_show_preview"] and pv_id is not None:
+        cat = get_cat(pv_id)
+
+        if cat is None:
+            close_preview()
+            st.rerun()
+
         @st.dialog("Preview")
         def show_preview():
             pv_id = st.session_state["keywords_preview_id"]
             cat = get_cat(pv_id)
+
+            if cat is None:
+                st.warning("Diese Kategorie ist nicht mehr verfügbar.")
+                if st.button("Schließen", key="dlg_close_invalid"):
+                    close_preview()
+                    st.rerun()
+                return
+
             st.subheader(cat["name"])
             st.caption("Unterkategorien")
             st.write("  ".join([f"`{t}`" for t in cat["terms"]]))
             st.divider()
 
-            # check: ist diese Kategorie schon irgendwo in den Gruppen?
             already_selected = any(
                 pv_id in group for group in st.session_state["keywords_groups"]
             )
@@ -836,15 +871,18 @@ with left_col:
                 else:
                     if st.button("Kategorie hinzufügen", key="dlg_add"):
                         close_preview()
-                        st.session_state["keywords_groups"].append([pv_id])  # neue Gruppe
+                        st.session_state["keywords_groups"] = [
+                            *st.session_state["keywords_groups"],
+                            [pv_id]
+                        ]
                         st.rerun()
 
             with c2:
                 if st.button("Schließen", key="dlg_close"):
                     close_preview()
-            
+                    st.rerun()
+
             with c3:
-                # EDIT: dauerhaft speichern
                 if st.button("✏️", key="dlg_edit"):
                     close_preview()
                     open_edit(pv_id, mode="permanent")
@@ -855,7 +893,6 @@ with left_col:
     
 
 with middle_col:
-    @st.fragment
     def render_middle():
         st.subheader("Ausgewählte Kategorien (Gruppen)")
 
@@ -1825,3 +1862,5 @@ with right_col:
                     st.rerun()
 
         edit_dialog()
+            
+"close_all_dialogs      "
