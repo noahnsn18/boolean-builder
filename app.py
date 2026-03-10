@@ -953,12 +953,20 @@ with middle_col:
             # Filter:
             # None | "TERM" | "CAT_NOT" | "CAT_NORMAL"
 
-            selected_keys = set(st.session_state.get("kw_group_select", set()))
+            current_selected_keys = set()
 
-            # Filter IMMER aus der aktuellen Auswahl ableiten
+            for it in items:
+                widget_key = f"kw_grpchk_{it['key']}"
+                if st.session_state.get(widget_key, False):
+                    current_selected_keys.add(it["key"])
+
+            # Fallback: falls Widgets noch nicht existieren
+            if not current_selected_keys:
+                current_selected_keys = set(st.session_state.get("kw_group_select", set()))
+
             derived_flt = None
-            if selected_keys:
-                first_key = next(iter(selected_keys), None)
+            if current_selected_keys:
+                first_key = next(iter(current_selected_keys), None)
                 first_item = next((x for x in items if x["key"] == first_key), None)
 
                 if first_item is not None:
@@ -967,16 +975,11 @@ with middle_col:
                     else:
                         derived_flt = "CAT_NOT" if first_item["not"] else "CAT_NORMAL"
 
-            # Session-State sauber synchron halten
-            if st.session_state.get("kw_group_filter") != derived_flt:
-                st.session_state["kw_group_filter"] = derived_flt
-                st.rerun()
-
             flt = derived_flt
 
-            for it in items:
-                checked = it["key"] in st.session_state["kw_group_select"]
+            new_group_select = set()
 
+            for it in items:
                 incompatible = False
 
                 if flt == "TERM":
@@ -987,18 +990,22 @@ with middle_col:
                     incompatible = (it["kind"] != "cat") or (it["not"] is not False)
 
                 disabled = (flt is not None and incompatible)
+                widget_key = f"kw_grpchk_{it['key']}"
 
                 val = st.checkbox(
                     it["label"],
-                    value=checked,
-                    key=f"kw_grpchk_{it['key']}",
+                    key=widget_key,
                     disabled=disabled
                 )
 
-                if val:
-                    st.session_state["kw_group_select"].add(it["key"])
-                else:
-                    st.session_state["kw_group_select"].discard(it["key"])
+                if val and not disabled:
+                    new_group_select.add(it["key"])
+
+            st.session_state["kw_group_select"] = new_group_select
+            st.session_state["kw_group_filter"] = flt
+
+            if len(new_group_select) == 0 and st.session_state.get("kw_group_filter") is not None:
+                st.session_state["kw_group_filter"] = None
 
             # Wenn nichts gewählt -> Filter zurücksetzen
             if len(st.session_state["kw_group_select"]) == 0 and st.session_state.get("kw_group_filter") is not None:
