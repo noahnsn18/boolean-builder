@@ -427,9 +427,6 @@ if "kw_show_history_dialog" not in st.session_state:
 if "kw_history_selected_id" not in st.session_state:
     st.session_state["kw_history_selected_id"] = None
 
-if "hist_copy_text" not in st.session_state:
-    st.session_state["hist_copy_text"] = ""
-
 if "kw_results_limit" not in st.session_state:
     st.session_state["kw_results_limit"] = 11
 
@@ -1493,64 +1490,24 @@ with right_col:
                     st.caption("Keine gespeicherte Auswahl vorhanden.")
 
                 st.divider()
-                st.caption("Boolean")
+                st.caption("Boolean (zum Kopieren anklicken)")
+                hist_boolean_value = chosen.get("boolean", "")
+
                 st.text_area(
                     " ",
-                    value=chosen.get("boolean", ""),
+                    value=hist_boolean_value,
                     height=110,
                     disabled=True,
-                    label_visibility="collapsed"
+                    label_visibility="collapsed",
+                    key=f"hist_boolean_view_{chosen['id']}"
                 )
 
                 st.divider()
                 st.caption("Aktionen")
 
-                a1, a2, a3, a4 = st.columns([1, 1.3, 1, 1])
+                a2, a3, a4 = st.columns([1.3, 1, 1])
 
-                with a1:
-                    copy_payload = json.dumps(chosen.get("boolean", ""))
-
-                    components.html(
-                        f"""
-                        <button id="copy_hist_btn"
-                            style="
-                                width:100%;
-                                padding:0.5rem 0.75rem;
-                                border:1px solid rgba(250,250,250,0.2);
-                                border-radius:0.5rem;
-                                background:transparent;
-                                color:inherit;
-                                cursor:pointer;
-                                font-size:14px;
-                            ">
-                            Kopieren
-                        </button>
-
-                        <script>
-                        const text = {copy_payload};
-
-                        const btn = document.getElementById("copy_hist_btn");
-
-                        btn.onclick = async () => {{
-                            try {{
-                                await navigator.clipboard.writeText(text);
-                            }} catch(e) {{
-                                const tmp = document.createElement("textarea");
-                                tmp.value = text;
-                                document.body.appendChild(tmp);
-                                tmp.select();
-                                document.execCommand("copy");
-                                document.body.removeChild(tmp);
-                            }}
-
-                            const old = btn.innerText;
-                            btn.innerText = "Kopiert!";
-                            setTimeout(() => btn.innerText = old, 900);
-                        }};
-                        </script>
-                        """,
-                        height=44,
-                    )
+                
                 with a2:
                     if st.button("In Builder laden", key="hist_load", use_container_width=True):
                         state = chosen.get("state", {})
@@ -1603,6 +1560,98 @@ with right_col:
 
 
         dlg_history()
+
+        hist_selected = next(
+            (
+                i for i in st.session_state.get("kw_history", [])
+                if i.get("id") == st.session_state.get("kw_history_selected_id")
+            ),
+            None
+        )
+
+        if hist_selected:
+            hist_boolean_string = hist_selected.get("boolean", "")
+
+            if hist_boolean_string:
+                payload = json.dumps(hist_boolean_string)
+
+                components.html(
+                    f"""
+                    <script>
+                    const text = {payload};
+
+                    function attachHistOverlay() {{
+                        const textareas = parent.document.querySelectorAll('textarea');
+                        if (!textareas || textareas.length < 2) return false;
+
+                        const ta = textareas[textareas.length - 1];
+                        const box = ta.closest('[data-testid="stTextArea"]');
+                        if (!box) return false;
+
+                        box.querySelectorAll('.hist-overlay').forEach(el => el.remove());
+
+                        box.style.position = 'relative';
+
+                        const ov = parent.document.createElement('div');
+                        ov.className = 'hist-overlay';
+                        ov.dataset.text = text;
+
+                        ov.style.position = 'absolute';
+                        ov.style.left = '0';
+                        ov.style.top = '0';
+                        ov.style.right = '0';
+                        ov.style.bottom = '0';
+                        ov.style.cursor = 'pointer';
+                        ov.style.background = 'transparent';
+                        ov.style.zIndex = '9999';
+
+                        const toast = parent.document.createElement('div');
+                        toast.innerText = 'Kopiert!';
+                        toast.style.position = 'absolute';
+                        toast.style.left = '50%';
+                        toast.style.top = '50%';
+                        toast.style.transform = 'translate(-50%, -50%)';
+                        toast.style.padding = '6px 10px';
+                        toast.style.borderRadius = '10px';
+                        toast.style.background = 'rgba(0,0,0,0.65)';
+                        toast.style.color = 'white';
+                        toast.style.fontSize = '14px';
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 180ms ease';
+                        toast.style.pointerEvents = 'none';
+
+                        ov.appendChild(toast);
+
+                        ov.addEventListener('click', async function() {{
+                            const currentText = this.dataset.text || '';
+                            try {{
+                                await navigator.clipboard.writeText(currentText);
+                            }} catch (e) {{
+                                const tmp = parent.document.createElement('textarea');
+                                tmp.value = currentText;
+                                parent.document.body.appendChild(tmp);
+                                tmp.select();
+                                parent.document.execCommand('copy');
+                                parent.document.body.removeChild(tmp);
+                            }}
+
+                            toast.style.opacity = '1';
+                            setTimeout(() => toast.style.opacity = '0', 800);
+                        }});
+
+                        box.appendChild(ov);
+                        return true;
+                    }}
+
+                    let tries = 0;
+                    const t = setInterval(() => {{
+                        tries++;
+                        if (attachHistOverlay() || tries > 30) clearInterval(t);
+                    }}, 120);
+                    </script>
+                    """,
+                    height=0,
+                )
 
     if st.session_state.get("kw_reset_create_dialog"):
         st.session_state.pop("kw_create_name", None)
@@ -1908,4 +1957,4 @@ with right_col:
 
         edit_dialog()
             
-#free_term 
+#a1 
