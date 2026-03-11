@@ -58,10 +58,9 @@ with h1:
     st.title("Boolean Builder")
 with h2:
     if st.button("🕘", key="btn_open_history_top", use_container_width=True):
-        if not st.session_state.get("kw_show_history_dialog"):
-            close_all_dialogs()
-            st.session_state["kw_show_history_dialog"] = True
-            st.rerun()
+        close_all_dialogs()
+        st.session_state["kw_show_history_dialog"] = True
+        st.rerun()
 # Testdaten (so wie spaeter aus DB)
 CATEGORIES = {
     "keywords": [
@@ -637,18 +636,24 @@ with left_col:
 
     # 1) Live-Eingabe ohne Enter
     placeholder = "Tippe z.B. NN oder SAP..." if st.session_state["kw_search_mode"] == "Kategorie" else "Tippe eine Unterkategorie z.B. AI..."
-    query = st_keyup(
+    query_widget = st_keyup(
         label="Suche Keywords",
         placeholder=placeholder,
         key="kw_query",
     )
-    q_raw = (query or "").strip()
+
+    query_value = st.session_state.get("kw_query", query_widget or "")
+    q_raw = (query_value or "").strip()
     q = normalize_search_text(q_raw)
 
     if q != st.session_state.get("kw_last_query", ""):
         st.session_state["kw_last_query"] = q
         st.session_state["kw_results_limit"] = 11
-        close_all_dialogs()
+
+        # Nur die Vorschau-/Edit-Dialoge schließen, nicht die Historie
+        close_preview()
+        close_group_preview()
+        close_edit()
 
     # 2) Trefferliste wie Sourcebreaker (unter dem Feld)
     selected_ids = {
@@ -698,7 +703,7 @@ with left_col:
                 new_hits = ranked_hits
 
             else:
-                new_hits.append({"type": "free_term", "term": (query or "").strip()})
+                new_hits.append({"type": "free_term", "term": (q_raw or "").strip()})
 
                 ranked_hits = []
 
@@ -1507,51 +1512,41 @@ with right_col:
 
                     components.html(
                         f"""
-                        <div style="display:flex; width:100%;">
-                            <button
-                                onclick='copyHistBoolean()'
-                                style="
-                                    width:100%;
-                                    padding:0.5rem 0.75rem;
-                                    border:1px solid rgba(250,250,250,0.2);
-                                    border-radius:0.5rem;
-                                    background:transparent;
-                                    color:inherit;
-                                    cursor:pointer;
-                                    font-size:14px;
-                                "
-                            >
-                                Kopieren
-                            </button>
-                        </div>
+                        <button id="copy_hist_btn"
+                            style="
+                                width:100%;
+                                padding:0.5rem 0.75rem;
+                                border:1px solid rgba(250,250,250,0.2);
+                                border-radius:0.5rem;
+                                background:transparent;
+                                color:inherit;
+                                cursor:pointer;
+                                font-size:14px;
+                            ">
+                            Kopieren
+                        </button>
 
                         <script>
-                        function copyHistBoolean() {{
-                            const text = {copy_payload};
+                        const text = {copy_payload};
 
-                            if (!text) return;
+                        const btn = document.getElementById("copy_hist_btn");
 
-                            navigator.clipboard.writeText(text).then(() => {{
-                                const btn = document.querySelector("button");
-                                if (!btn) return;
-                                const old = btn.innerText;
-                                btn.innerText = "Kopiert!";
-                                setTimeout(() => btn.innerText = old, 900);
-                            }}).catch(() => {{
+                        btn.onclick = async () => {{
+                            try {{
+                                await navigator.clipboard.writeText(text);
+                            }} catch(e) {{
                                 const tmp = document.createElement("textarea");
                                 tmp.value = text;
                                 document.body.appendChild(tmp);
                                 tmp.select();
                                 document.execCommand("copy");
                                 document.body.removeChild(tmp);
+                            }}
 
-                                const btn = document.querySelector("button");
-                                if (!btn) return;
-                                const old = btn.innerText;
-                                btn.innerText = "Kopiert!";
-                                setTimeout(() => btn.innerText = old, 900);
-                            }});
-                        }}
+                            const old = btn.innerText;
+                            btn.innerText = "Kopiert!";
+                            setTimeout(() => btn.innerText = old, 900);
+                        }};
                         </script>
                         """,
                         height=44,
@@ -1913,4 +1908,4 @@ with right_col:
 
         edit_dialog()
             
-#a1
+#free_term 
