@@ -60,6 +60,7 @@ with h2:
     if st.button("🕘", key="btn_open_history_top", use_container_width=True):
         close_all_dialogs()
         st.session_state["kw_show_history_dialog"] = True
+        st.session_state["kw_skip_close_history_once"] = True
         st.rerun()
 # Testdaten (so wie spaeter aus DB)
 CATEGORIES = {
@@ -436,6 +437,9 @@ if "kw_reset_save_dialog" not in st.session_state:
 if "kw_last_overlay_text" not in st.session_state:
     st.session_state["kw_last_overlay_text"] = None
 
+if "kw_skip_close_history_once" not in st.session_state:
+    st.session_state["kw_skip_close_history_once"] = False
+
 import time
 
 if "kw_copy_time" not in st.session_state:
@@ -650,7 +654,11 @@ with left_col:
         close_preview()
         close_group_preview()
         close_edit()
-        close_history()
+
+        if st.session_state.get("kw_skip_close_history_once"):
+            st.session_state["kw_skip_close_history_once"] = False
+        else:
+            close_history()
 
     # 2) Trefferliste wie Sourcebreaker (unter dem Feld)
     selected_ids = {
@@ -1296,82 +1304,7 @@ with right_col:
         import json
         payload = json.dumps(boolean_string)
 
-        components.html(
-            f"""
-            <script>
-            const text = {payload};
-
-            function attach() {{
-                const ta = parent.document.querySelector('textarea[aria-label="Output"]');
-                if (!ta) return false;
-
-                const box = ta.closest('[data-testid="stTextArea"]');
-                if (!box) return false;
-
-                parent.document.querySelectorAll('.sb-main-overlay').forEach(el => el.remove());
-
-                box.style.position = 'relative';
-
-                const ov = parent.document.createElement('div');
-                ov.className = 'sb-main-overlay';
-                ov.dataset.text = text;
-
-                ov.style.position = 'absolute';
-                ov.style.left = '0';
-                ov.style.top = '0';
-                ov.style.right = '0';
-                ov.style.bottom = '0';
-                ov.style.cursor = 'pointer';
-                ov.style.background = 'transparent';
-                ov.style.zIndex = '9999';
-
-                const toast = parent.document.createElement('div');
-                toast.innerText = 'Kopiert!';
-                toast.style.position = 'absolute';
-                toast.style.left = '50%';
-                toast.style.top = '50%';
-                toast.style.transform = 'translate(-50%, -50%)';
-                toast.style.padding = '6px 10px';
-                toast.style.borderRadius = '10px';
-                toast.style.background = 'rgba(0,0,0,0.65)';
-                toast.style.color = 'white';
-                toast.style.fontSize = '14px';
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 180ms ease';
-                toast.style.pointerEvents = 'none';
-
-                ov.appendChild(toast);
-
-                ov.addEventListener('click', async function() {{
-                    const currentText = this.dataset.text || '';
-                    try {{
-                        await navigator.clipboard.writeText(currentText);
-                    }} catch (e) {{
-                        const tmp = parent.document.createElement('textarea');
-                        tmp.value = currentText;
-                        parent.document.body.appendChild(tmp);
-                        tmp.select();
-                        parent.document.execCommand('copy');
-                        parent.document.body.removeChild(tmp);
-                    }}
-
-                    toast.style.opacity = '1';
-                    setTimeout(() => toast.style.opacity = '0', 800);
-                }});
-
-                box.appendChild(ov);
-                return true;
-            }}
-
-            let tries = 0;
-            const t = setInterval(() => {{
-                tries++;
-                if (attach() || tries > 30) clearInterval(t);
-            }}, 120);
-            </script>
-            """,
-            height=0,
-        )
+        
 
         st.session_state["kw_last_overlay_text"] = boolean_string
 
@@ -1490,99 +1423,8 @@ with right_col:
                     st.caption("Keine gespeicherte Auswahl vorhanden.")
 
                 st.divider()
-                st.caption("Boolean (zum Kopieren anklicken)")
-                hist_boolean_value = chosen.get("boolean", "")
-
-                st.text_area(
-                    " ",
-                    value=hist_boolean_value,
-                    height=110,
-                    disabled=True,
-                    label_visibility="collapsed",
-                    key=f"hist_boolean_view_{chosen['id']}"
-                )
-
-                components.html(
-                    f"""
-                    <script>
-                    const text = {json.dumps(hist_boolean_value)};
-
-                    function attachHistoryCopy() {{
-                        const dialog = parent.document.querySelector('div[role="dialog"]');
-                        if (!dialog) return false;
-
-                        const boxes = dialog.querySelectorAll('[data-testid="stTextArea"]');
-                        if (!boxes || boxes.length === 0) return false;
-
-                        const box = boxes[0];
-
-                        box.querySelectorAll('.hist-click-overlay').forEach(el => el.remove());
-                        box.style.position = 'relative';
-
-                        const ov = parent.document.createElement('div');
-                        ov.className = 'hist-click-overlay';
-                        ov.style.position = 'absolute';
-                        ov.style.left = '0';
-                        ov.style.top = '0';
-                        ov.style.right = '0';
-                        ov.style.bottom = '0';
-                        ov.style.background = 'transparent';
-                        ov.style.cursor = 'pointer';
-                        ov.style.zIndex = '9999';
-                        ov.style.userSelect = 'none';
-
-                        const toast = parent.document.createElement('div');
-                        toast.innerText = 'Kopiert!';
-                        toast.style.position = 'absolute';
-                        toast.style.left = '50%';
-                        toast.style.top = '50%';
-                        toast.style.transform = 'translate(-50%, -50%)';
-                        toast.style.padding = '6px 10px';
-                        toast.style.borderRadius = '10px';
-                        toast.style.background = 'rgba(0,0,0,0.65)';
-                        toast.style.color = 'white';
-                        toast.style.fontSize = '14px';
-                        toast.style.opacity = '0';
-                        toast.style.transition = 'opacity 180ms ease';
-                        toast.style.pointerEvents = 'none';
-                        toast.style.userSelect = 'none';
-
-                        ov.appendChild(toast);
-
-                        ov.addEventListener('click', async (event) => {{
-                            event.preventDefault();
-                            event.stopPropagation();
-
-                            try {{
-                                await navigator.clipboard.writeText(text);
-                            }} catch (e) {{
-                                const tmp = parent.document.createElement('textarea');
-                                tmp.value = text;
-                                parent.document.body.appendChild(tmp);
-                                tmp.select();
-                                parent.document.execCommand('copy');
-                                parent.document.body.removeChild(tmp);
-                            }}
-
-                            toast.style.opacity = '1';
-                            setTimeout(() => {{
-                                toast.style.opacity = '0';
-                            }}, 800);
-                        }});
-
-                        box.appendChild(ov);
-                        return true;
-                    }}
-
-                    let tries = 0;
-                    const timer = setInterval(() => {{
-                        tries++;
-                        if (attachHistoryCopy() || tries > 40) clearInterval(timer);
-                    }}, 120);
-                    </script>
-                    """,
-                    height=0
-                )
+                st.caption("Boolean")
+                st.code(chosen.get("boolean", ""), language=None)
 
                 st.divider()
                 st.caption("Aktionen")
@@ -1949,4 +1791,4 @@ with right_col:
 
         edit_dialog()
             
-#boolean
+#components
