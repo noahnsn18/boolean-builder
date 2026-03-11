@@ -1295,13 +1295,93 @@ with right_col:
     boolean_string = build_boolean(st.session_state["keywords_groups"])
     st.session_state["kw_out"] = boolean_string
 
-    st.text_area(
-        "Output",
-        value=boolean_string,
-        height=120,
-        key="kw_out_display",
-        disabled=True
-    )
+    st.caption("Output")
+
+    if boolean_string:
+        payload = json.dumps(boolean_string)
+
+        components.html(
+            f"""
+            <div id="kw-output-box" style="
+                min-height:120px;
+                padding:12px 14px;
+                border:1px solid rgba(49, 51, 63, 0.2);
+                border-radius:8px;
+                background:#f0f2f6;
+                white-space:pre-wrap;
+                word-break:break-word;
+                overflow-wrap:anywhere;
+                cursor:pointer;
+                font-family:inherit;
+                font-size:14px;
+                line-height:1.45;
+                position:relative;
+                user-select:none;
+            ">{boolean_string}</div>
+
+            <script>
+            const text = {payload};
+            const box = document.getElementById("kw-output-box");
+
+            if (box) {{
+                box.onclick = async function() {{
+                    try {{
+                        await navigator.clipboard.writeText(text);
+                    }} catch (e) {{
+                        const tmp = document.createElement("textarea");
+                        tmp.value = text;
+                        document.body.appendChild(tmp);
+                        tmp.select();
+                        document.execCommand("copy");
+                        document.body.removeChild(tmp);
+                    }}
+
+                    let toast = document.getElementById("kw-copy-toast");
+                    if (!toast) {{
+                        toast = document.createElement("div");
+                        toast.id = "kw-copy-toast";
+                        toast.innerText = "Kopiert!";
+                        toast.style.position = "absolute";
+                        toast.style.left = "50%";
+                        toast.style.top = "50%";
+                        toast.style.transform = "translate(-50%, -50%)";
+                        toast.style.padding = "6px 10px";
+                        toast.style.borderRadius = "10px";
+                        toast.style.background = "rgba(0,0,0,0.65)";
+                        toast.style.color = "white";
+                        toast.style.fontSize = "14px";
+                        toast.style.pointerEvents = "none";
+                        toast.style.opacity = "0";
+                        toast.style.transition = "opacity 180ms ease";
+                        box.appendChild(toast);
+                    }}
+
+                    toast.style.opacity = "1";
+                    setTimeout(() => {{
+                        toast.style.opacity = "0";
+                    }}, 800);
+                }};
+            }}
+            </script>
+            """,
+            height=140,
+        )
+    else:
+        st.markdown(
+            """
+            <div style="
+                min-height:120px;
+                padding:12px 14px;
+                border:1px solid rgba(49, 51, 63, 0.2);
+                border-radius:8px;
+                background:#f0f2f6;
+                color:#888;
+                font-size:14px;
+                line-height:1.45;
+            "></div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     cA, cB = st.columns([2, 1])
 
@@ -1313,87 +1393,6 @@ with right_col:
         ):
             st.session_state["kw_show_save_dialog"] = True
             st.rerun()
-
-    if boolean_string:
-        payload = json.dumps(boolean_string)
-
-        components.html(
-            f"""
-            <script>
-            const text = {payload};
-
-            function attachMainCopy() {{
-                const ta = parent.document.querySelector('textarea[aria-label="Output"]');
-                if (!ta) return false;
-
-                const box = ta.closest('[data-testid="stTextArea"]');
-                if (!box) return false;
-
-                box.querySelectorAll('.sb-main-overlay').forEach(el => el.remove());
-                box.style.position = 'relative';
-
-                const ov = parent.document.createElement('div');
-                ov.className = 'sb-main-overlay';
-                ov.style.position = 'absolute';
-                ov.style.left = '0';
-                ov.style.top = '0';
-                ov.style.right = '0';
-                ov.style.bottom = '0';
-                ov.style.cursor = 'pointer';
-                ov.style.background = 'transparent';
-                ov.style.zIndex = '9999';
-
-                const toast = parent.document.createElement('div');
-                toast.innerText = 'Kopiert!';
-                toast.style.position = 'absolute';
-                toast.style.left = '50%';
-                toast.style.top = '50%';
-                toast.style.transform = 'translate(-50%, -50%)';
-                toast.style.padding = '6px 10px';
-                toast.style.borderRadius = '10px';
-                toast.style.background = 'rgba(0,0,0,0.65)';
-                toast.style.color = 'white';
-                toast.style.fontSize = '14px';
-                toast.style.opacity = '0';
-                toast.style.transition = 'opacity 180ms ease';
-                toast.style.pointerEvents = 'none';
-
-                ov.appendChild(toast);
-
-                ov.addEventListener('click', async function(event) {{
-                    event.preventDefault();
-                    event.stopPropagation();
-
-                    try {{
-                        await navigator.clipboard.writeText(text);
-                    }} catch (e) {{
-                        const tmp = parent.document.createElement('textarea');
-                        tmp.value = text;
-                        parent.document.body.appendChild(tmp);
-                        tmp.select();
-                        parent.document.execCommand('copy');
-                        parent.document.body.removeChild(tmp);
-                    }}
-
-                    toast.style.opacity = '1';
-                    setTimeout(() => {{
-                        toast.style.opacity = '0';
-                    }}, 800);
-                }});
-
-                box.appendChild(ov);
-                return true;
-            }}
-
-            let tries = 0;
-            const t = setInterval(() => {{
-                tries++;
-                if (attachMainCopy() || tries > 40) clearInterval(t);
-            }}, 120);
-            </script>
-            """,
-            height=0,
-        )
 
     if st.session_state.get("kw_reset_save_dialog"):
         st.session_state.pop("kw_save_name", None)
