@@ -1306,15 +1306,17 @@ with right_col:
                 min-height:120px;
                 padding:12px 14px;
                 border:1px solid rgba(49, 51, 63, 0.2);
-                border-radius:8px;
-                background:#f0f2f6;
+                border-radius:0.5rem;
+                background:rgb(240, 242, 246);
                 white-space:pre-wrap;
                 word-break:break-word;
                 overflow-wrap:anywhere;
                 cursor:pointer;
-                font-family:inherit;
-                font-size:14px;
-                line-height:1.45;
+                font-family:"Source Sans Pro", sans-serif;
+                font-size:0.875rem;
+                font-weight:400;
+                line-height:1.6;
+                color:rgb(49, 51, 63);
                 position:relative;
                 user-select:none;
             ">{boolean_string}</div>
@@ -1870,4 +1872,4 @@ with right_col:
 
         edit_dialog()
             
-#cA 
+#inherit 
