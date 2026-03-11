@@ -1293,24 +1293,27 @@ with right_col:
     st.subheader("Boolean Output")
 
     boolean_string = build_boolean(st.session_state["keywords_groups"])
-
-    # WICHTIG: Textarea-Value per Session-State updaten, sonst bleibt es leer
     st.session_state["kw_out"] = boolean_string
 
     st.text_area(
         "Output",
-        boolean_string,
-        height=120
+        value=boolean_string,
+        height=120,
+        key="kw_out_display",
+        disabled=True
     )
 
     cA, cB = st.columns([2, 1])
 
     with cA:
-        if st.button("Boolean speichern", key="btn_save_under_output", disabled=not bool(st.session_state.get("kw_out"))):
+        if st.button(
+            "Boolean speichern",
+            key="btn_save_under_output",
+            disabled=not bool(st.session_state.get("kw_out"))
+        ):
             st.session_state["kw_show_save_dialog"] = True
             st.rerun()
 
-    # Click-to-copy Overlay fuer normalen Boolean Output
     if boolean_string:
         payload = json.dumps(boolean_string)
 
@@ -1385,7 +1388,7 @@ with right_col:
             let tries = 0;
             const t = setInterval(() => {{
                 tries++;
-                if (attachMainCopy() || tries > 30) clearInterval(t);
+                if (attachMainCopy() || tries > 40) clearInterval(t);
             }}, 120);
             </script>
             """,
@@ -1396,7 +1399,6 @@ with right_col:
         st.session_state.pop("kw_save_name", None)
         st.session_state["kw_reset_save_dialog"] = False
 
-    # --- Dialog: Boolean speichern ---
     if st.session_state.get("kw_show_save_dialog"):
         @st.dialog("Boolean speichern")
         def dlg_save_boolean():
@@ -1427,9 +1429,9 @@ with right_col:
                 st.session_state["kw_show_save_dialog"] = False
                 st.session_state["kw_reset_save_dialog"] = True
                 st.rerun()
+
         dlg_save_boolean()
-    
-    # --- Dialog: Suchhistorie ---
+
     if st.session_state.get("kw_show_history_dialog"):
         @st.dialog("Suchhistorie")
         def dlg_history():
@@ -1442,7 +1444,6 @@ with right_col:
                     st.rerun()
                 return
 
-            # Neueste zuerst
             def _dt(it):
                 try:
                     return datetime.strptime(it.get("created_at", ""), "%Y-%m-%d %H:%M:%S")
@@ -1481,7 +1482,6 @@ with right_col:
                 st.caption("Auswahl (gespeichert)")
 
                 summ = chosen.get("summary", {})
-
                 has_any = False
 
                 for tg in summ.get("term_groups", []):
@@ -1515,7 +1515,6 @@ with right_col:
 
                 a2, a3, a4 = st.columns([1.3, 1, 1])
 
-                
                 with a2:
                     if st.button("In Builder laden", key="hist_load", use_container_width=True):
                         state = chosen.get("state", {})
@@ -1563,9 +1562,6 @@ with right_col:
                 if st.button("Schließen", key="hist_close", use_container_width=True):
                     st.session_state["kw_show_history_dialog"] = False
                     st.rerun()
-
-            copy_js_slot = st.empty()
-
 
         dlg_history()
 
