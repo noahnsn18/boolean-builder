@@ -445,9 +445,6 @@ if "kw_results_limit" not in st.session_state:
 if "kw_reset_save_dialog" not in st.session_state:
     st.session_state["kw_reset_save_dialog"] = False
 
-if "kw_last_overlay_text" not in st.session_state:
-    st.session_state["kw_last_overlay_text"] = None
-
 if "kw_skip_close_history_once" not in st.session_state:
     st.session_state["kw_skip_close_history_once"] = False
 
@@ -1314,89 +1311,87 @@ with right_col:
             st.rerun()
 
 
-        # Click-to-copy Overlay fuer normalen Boolean Output
-        if boolean_string and st.session_state.get("kw_last_overlay_text") != boolean_string:
-            payload = json.dumps(boolean_string)
+            # Click-to-copy Overlay fuer normalen Boolean Output
+            if boolean_string:
+                payload = json.dumps(boolean_string)
 
-            components.html(
-                f"""
-                <script>
-                const text = {payload};
+                components.html(
+                    f"""
+                    <script>
+                    const text = {payload};
 
-                function attachMainCopy() {{
-                    const ta = parent.document.querySelector('textarea[aria-label="Output"]');
-                    if (!ta) return false;
+                    function attachMainCopy() {{
+                        const ta = parent.document.querySelector('textarea[aria-label="Output"]');
+                        if (!ta) return false;
 
-                    const box = ta.closest('[data-testid="stTextArea"]');
-                    if (!box) return false;
+                        const box = ta.closest('[data-testid="stTextArea"]');
+                        if (!box) return false;
 
-                    box.querySelectorAll('.sb-main-overlay').forEach(el => el.remove());
-                    box.style.position = 'relative';
+                        box.querySelectorAll('.sb-main-overlay').forEach(el => el.remove());
+                        box.style.position = 'relative';
 
-                    const ov = parent.document.createElement('div');
-                    ov.className = 'sb-main-overlay';
-                    ov.style.position = 'absolute';
-                    ov.style.left = '0';
-                    ov.style.top = '0';
-                    ov.style.right = '0';
-                    ov.style.bottom = '0';
-                    ov.style.cursor = 'pointer';
-                    ov.style.background = 'transparent';
-                    ov.style.zIndex = '9999';
+                        const ov = parent.document.createElement('div');
+                        ov.className = 'sb-main-overlay';
+                        ov.style.position = 'absolute';
+                        ov.style.left = '0';
+                        ov.style.top = '0';
+                        ov.style.right = '0';
+                        ov.style.bottom = '0';
+                        ov.style.cursor = 'pointer';
+                        ov.style.background = 'transparent';
+                        ov.style.zIndex = '9999';
 
-                    const toast = parent.document.createElement('div');
-                    toast.innerText = 'Kopiert!';
-                    toast.style.position = 'absolute';
-                    toast.style.left = '50%';
-                    toast.style.top = '50%';
-                    toast.style.transform = 'translate(-50%, -50%)';
-                    toast.style.padding = '6px 10px';
-                    toast.style.borderRadius = '10px';
-                    toast.style.background = 'rgba(0,0,0,0.65)';
-                    toast.style.color = 'white';
-                    toast.style.fontSize = '14px';
-                    toast.style.opacity = '0';
-                    toast.style.transition = 'opacity 180ms ease';
-                    toast.style.pointerEvents = 'none';
+                        const toast = parent.document.createElement('div');
+                        toast.innerText = 'Kopiert!';
+                        toast.style.position = 'absolute';
+                        toast.style.left = '50%';
+                        toast.style.top = '50%';
+                        toast.style.transform = 'translate(-50%, -50%)';
+                        toast.style.padding = '6px 10px';
+                        toast.style.borderRadius = '10px';
+                        toast.style.background = 'rgba(0,0,0,0.65)';
+                        toast.style.color = 'white';
+                        toast.style.fontSize = '14px';
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 180ms ease';
+                        toast.style.pointerEvents = 'none';
 
-                    ov.appendChild(toast);
+                        ov.appendChild(toast);
 
-                    ov.addEventListener('click', async function(event) {{
-                        event.preventDefault();
-                        event.stopPropagation();
+                        ov.addEventListener('click', async function(event) {{
+                            event.preventDefault();
+                            event.stopPropagation();
 
-                        try {{
-                            await navigator.clipboard.writeText(text);
-                        }} catch (e) {{
-                            const tmp = parent.document.createElement('textarea');
-                            tmp.value = text;
-                            parent.document.body.appendChild(tmp);
-                            tmp.select();
-                            parent.document.execCommand('copy');
-                            parent.document.body.removeChild(tmp);
-                        }}
+                            try {{
+                                await navigator.clipboard.writeText(text);
+                            }} catch (e) {{
+                                const tmp = parent.document.createElement('textarea');
+                                tmp.value = text;
+                                parent.document.body.appendChild(tmp);
+                                tmp.select();
+                                parent.document.execCommand('copy');
+                                parent.document.body.removeChild(tmp);
+                            }}
 
-                        toast.style.opacity = '1';
-                        setTimeout(() => {{
-                            toast.style.opacity = '0';
-                        }}, 800);
-                    }});
+                            toast.style.opacity = '1';
+                            setTimeout(() => {{
+                                toast.style.opacity = '0';
+                            }}, 800);
+                        }});
 
-                    box.appendChild(ov);
-                    return true;
-                }}
+                        box.appendChild(ov);
+                        return true;
+                    }}
 
-                let tries = 0;
-                const t = setInterval(() => {{
-                    tries++;
-                    if (attachMainCopy() || tries > 30) clearInterval(t);
-                }}, 120);
-                </script>
-                """,
-                height=0,
-            )
-
-            st.session_state["kw_last_overlay_text"] = boolean_string
+                    let tries = 0;
+                    const t = setInterval(() => {{
+                        tries++;
+                        if (attachMainCopy() || tries > 30) clearInterval(t);
+                    }}, 120);
+                    </script>
+                    """,
+                    height=0,
+                )
 
     if st.session_state.get("kw_reset_save_dialog"):
         st.session_state.pop("kw_save_name", None)
@@ -1881,4 +1876,4 @@ with right_col:
 
         edit_dialog()
             
-  
+#kw_last_overlay_text
