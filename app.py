@@ -1571,6 +1571,7 @@ with right_col:
 
         if hist_selected:
             hist_boolean_string = hist_selected.get("boolean", "")
+            hist_textarea_key = f"hist_boolean_view_{hist_selected['id']}"
 
             if hist_boolean_string:
                 payload = json.dumps(hist_boolean_string)
@@ -1579,23 +1580,41 @@ with right_col:
                     f"""
                     <script>
                     const text = {payload};
+                    const targetKey = {json.dumps(hist_textarea_key)};
 
                     function attachHistOverlay() {{
-                        const textareas = parent.document.querySelectorAll('textarea');
-                        if (!textareas || textareas.length < 2) return false;
+                        const containers = parent.document.querySelectorAll('[data-testid="stTextArea"]');
+                        if (!containers || containers.length === 0) return false;
 
-                        const ta = textareas[textareas.length - 1];
-                        const box = ta.closest('[data-testid="stTextArea"]');
-                        if (!box) return false;
+                        let targetBox = null;
 
-                        box.querySelectorAll('.hist-overlay').forEach(el => el.remove());
+                        for (const box of containers) {{
+                            const ta = box.querySelector('textarea');
+                            if (!ta) continue;
 
-                        box.style.position = 'relative';
+                            const aria = ta.getAttribute('aria-label') || '';
+                            const id = ta.getAttribute('id') || '';
+                            const placeholder = ta.getAttribute('placeholder') || '';
+
+                            if (
+                                aria.includes(targetKey) ||
+                                id.includes(targetKey) ||
+                                placeholder.includes(targetKey)
+                            ) {{
+                                targetBox = box;
+                                break;
+                            }}
+                        }}
+
+                        if (!targetBox) {{
+                            targetBox = containers[containers.length - 1];
+                        }}
+
+                        targetBox.querySelectorAll('.hist-overlay').forEach(el => el.remove());
+                        targetBox.style.position = 'relative';
 
                         const ov = parent.document.createElement('div');
                         ov.className = 'hist-overlay';
-                        ov.dataset.text = text;
-
                         ov.style.position = 'absolute';
                         ov.style.left = '0';
                         ov.style.top = '0';
@@ -1622,13 +1641,15 @@ with right_col:
 
                         ov.appendChild(toast);
 
-                        ov.addEventListener('click', async function() {{
-                            const currentText = this.dataset.text || '';
+                        ov.addEventListener('click', async function(event) {{
+                            event.preventDefault();
+                            event.stopPropagation();
+
                             try {{
-                                await navigator.clipboard.writeText(currentText);
+                                await navigator.clipboard.writeText(text);
                             }} catch (e) {{
                                 const tmp = parent.document.createElement('textarea');
-                                tmp.value = currentText;
+                                tmp.value = text;
                                 parent.document.body.appendChild(tmp);
                                 tmp.select();
                                 parent.document.execCommand('copy');
@@ -1636,17 +1657,19 @@ with right_col:
                             }}
 
                             toast.style.opacity = '1';
-                            setTimeout(() => toast.style.opacity = '0', 800);
+                            setTimeout(() => {{
+                                toast.style.opacity = '0';
+                            }}, 800);
                         }});
 
-                        box.appendChild(ov);
+                        targetBox.appendChild(ov);
                         return true;
                     }}
 
                     let tries = 0;
                     const t = setInterval(() => {{
                         tries++;
-                        if (attachHistOverlay() || tries > 30) clearInterval(t);
+                        if (attachHistOverlay() || tries > 40) clearInterval(t);
                     }}, 120);
                     </script>
                     """,
