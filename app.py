@@ -647,10 +647,10 @@ with left_col:
         st.session_state["kw_last_query"] = q
         st.session_state["kw_results_limit"] = 11
 
-        # Nur die Vorschau-/Edit-Dialoge schließen, nicht die Historie
         close_preview()
         close_group_preview()
         close_edit()
+        close_history()
 
     # 2) Trefferliste wie Sourcebreaker (unter dem Feld)
     selected_ids = {
@@ -1302,18 +1302,18 @@ with right_col:
             const text = {payload};
 
             function attach() {{
-                const ta = parent.document.querySelector('textarea');
+                const ta = parent.document.querySelector('textarea[aria-label="Output"]');
                 if (!ta) return false;
 
                 const box = ta.closest('[data-testid="stTextArea"]');
                 if (!box) return false;
 
-                parent.document.querySelectorAll('.sb-overlay').forEach(el => el.remove());
+                parent.document.querySelectorAll('.sb-main-overlay').forEach(el => el.remove());
 
                 box.style.position = 'relative';
 
                 const ov = parent.document.createElement('div');
-                ov.className = 'sb-overlay';
+                ov.className = 'sb-main-overlay';
                 ov.dataset.text = text;
 
                 ov.style.position = 'absolute';
@@ -1502,6 +1502,88 @@ with right_col:
                     key=f"hist_boolean_view_{chosen['id']}"
                 )
 
+                components.html(
+                    f"""
+                    <script>
+                    const text = {json.dumps(hist_boolean_value)};
+
+                    function attachHistoryCopy() {{
+                        const dialog = parent.document.querySelector('div[role="dialog"]');
+                        if (!dialog) return false;
+
+                        const boxes = dialog.querySelectorAll('[data-testid="stTextArea"]');
+                        if (!boxes || boxes.length === 0) return false;
+
+                        const box = boxes[0];
+
+                        box.querySelectorAll('.hist-click-overlay').forEach(el => el.remove());
+                        box.style.position = 'relative';
+
+                        const ov = parent.document.createElement('div');
+                        ov.className = 'hist-click-overlay';
+                        ov.style.position = 'absolute';
+                        ov.style.left = '0';
+                        ov.style.top = '0';
+                        ov.style.right = '0';
+                        ov.style.bottom = '0';
+                        ov.style.background = 'transparent';
+                        ov.style.cursor = 'pointer';
+                        ov.style.zIndex = '9999';
+                        ov.style.userSelect = 'none';
+
+                        const toast = parent.document.createElement('div');
+                        toast.innerText = 'Kopiert!';
+                        toast.style.position = 'absolute';
+                        toast.style.left = '50%';
+                        toast.style.top = '50%';
+                        toast.style.transform = 'translate(-50%, -50%)';
+                        toast.style.padding = '6px 10px';
+                        toast.style.borderRadius = '10px';
+                        toast.style.background = 'rgba(0,0,0,0.65)';
+                        toast.style.color = 'white';
+                        toast.style.fontSize = '14px';
+                        toast.style.opacity = '0';
+                        toast.style.transition = 'opacity 180ms ease';
+                        toast.style.pointerEvents = 'none';
+                        toast.style.userSelect = 'none';
+
+                        ov.appendChild(toast);
+
+                        ov.addEventListener('click', async (event) => {{
+                            event.preventDefault();
+                            event.stopPropagation();
+
+                            try {{
+                                await navigator.clipboard.writeText(text);
+                            }} catch (e) {{
+                                const tmp = parent.document.createElement('textarea');
+                                tmp.value = text;
+                                parent.document.body.appendChild(tmp);
+                                tmp.select();
+                                parent.document.execCommand('copy');
+                                parent.document.body.removeChild(tmp);
+                            }}
+
+                            toast.style.opacity = '1';
+                            setTimeout(() => {{
+                                toast.style.opacity = '0';
+                            }}, 800);
+                        }});
+
+                        box.appendChild(ov);
+                        return true;
+                    }}
+
+                    let tries = 0;
+                    const timer = setInterval(() => {{
+                        tries++;
+                        if (attachHistoryCopy() || tries > 40) clearInterval(timer);
+                    }}, 120);
+                    </script>
+                    """,
+                    height=0
+                )
+
                 st.divider()
                 st.caption("Aktionen")
 
@@ -1561,120 +1643,7 @@ with right_col:
 
         dlg_history()
 
-        hist_selected = next(
-            (
-                i for i in st.session_state.get("kw_history", [])
-                if i.get("id") == st.session_state.get("kw_history_selected_id")
-            ),
-            None
-        )
-
-        if hist_selected:
-            hist_boolean_string = hist_selected.get("boolean", "")
-            hist_textarea_key = f"hist_boolean_view_{hist_selected['id']}"
-
-            if hist_boolean_string:
-                payload = json.dumps(hist_boolean_string)
-
-                components.html(
-                    f"""
-                    <script>
-                    const text = {payload};
-                    const targetKey = {json.dumps(hist_textarea_key)};
-
-                    function attachHistOverlay() {{
-                        const containers = parent.document.querySelectorAll('[data-testid="stTextArea"]');
-                        if (!containers || containers.length === 0) return false;
-
-                        let targetBox = null;
-
-                        for (const box of containers) {{
-                            const ta = box.querySelector('textarea');
-                            if (!ta) continue;
-
-                            const aria = ta.getAttribute('aria-label') || '';
-                            const id = ta.getAttribute('id') || '';
-                            const placeholder = ta.getAttribute('placeholder') || '';
-
-                            if (
-                                aria.includes(targetKey) ||
-                                id.includes(targetKey) ||
-                                placeholder.includes(targetKey)
-                            ) {{
-                                targetBox = box;
-                                break;
-                            }}
-                        }}
-
-                        if (!targetBox) {{
-                            targetBox = containers[containers.length - 1];
-                        }}
-
-                        targetBox.querySelectorAll('.hist-overlay').forEach(el => el.remove());
-                        targetBox.style.position = 'relative';
-
-                        const ov = parent.document.createElement('div');
-                        ov.className = 'hist-overlay';
-                        ov.style.position = 'absolute';
-                        ov.style.left = '0';
-                        ov.style.top = '0';
-                        ov.style.right = '0';
-                        ov.style.bottom = '0';
-                        ov.style.cursor = 'pointer';
-                        ov.style.background = 'transparent';
-                        ov.style.zIndex = '9999';
-
-                        const toast = parent.document.createElement('div');
-                        toast.innerText = 'Kopiert!';
-                        toast.style.position = 'absolute';
-                        toast.style.left = '50%';
-                        toast.style.top = '50%';
-                        toast.style.transform = 'translate(-50%, -50%)';
-                        toast.style.padding = '6px 10px';
-                        toast.style.borderRadius = '10px';
-                        toast.style.background = 'rgba(0,0,0,0.65)';
-                        toast.style.color = 'white';
-                        toast.style.fontSize = '14px';
-                        toast.style.opacity = '0';
-                        toast.style.transition = 'opacity 180ms ease';
-                        toast.style.pointerEvents = 'none';
-
-                        ov.appendChild(toast);
-
-                        ov.addEventListener('click', async function(event) {{
-                            event.preventDefault();
-                            event.stopPropagation();
-
-                            try {{
-                                await navigator.clipboard.writeText(text);
-                            }} catch (e) {{
-                                const tmp = parent.document.createElement('textarea');
-                                tmp.value = text;
-                                parent.document.body.appendChild(tmp);
-                                tmp.select();
-                                parent.document.execCommand('copy');
-                                parent.document.body.removeChild(tmp);
-                            }}
-
-                            toast.style.opacity = '1';
-                            setTimeout(() => {{
-                                toast.style.opacity = '0';
-                            }}, 800);
-                        }});
-
-                        targetBox.appendChild(ov);
-                        return true;
-                    }}
-
-                    let tries = 0;
-                    const t = setInterval(() => {{
-                        tries++;
-                        if (attachHistOverlay() || tries > 40) clearInterval(t);
-                    }}, 120);
-                    </script>
-                    """,
-                    height=0,
-                )
+        
 
     if st.session_state.get("kw_reset_create_dialog"):
         st.session_state.pop("kw_create_name", None)
@@ -1980,4 +1949,4 @@ with right_col:
 
         edit_dialog()
             
-#a1 
+#boolean
