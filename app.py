@@ -1503,10 +1503,59 @@ with right_col:
                 a1, a2, a3, a4 = st.columns([1, 1.3, 1, 1])
 
                 with a1:
-                    if st.button("Kopieren", key="hist_copy", use_container_width=True):
-                        st.session_state["hist_copy_text"] = chosen.get("boolean", "")
-                        st.rerun()
+                    copy_payload = json.dumps(chosen.get("boolean", ""))
 
+                    components.html(
+                        f"""
+                        <div style="display:flex; width:100%;">
+                            <button
+                                onclick='copyHistBoolean()'
+                                style="
+                                    width:100%;
+                                    padding:0.5rem 0.75rem;
+                                    border:1px solid rgba(250,250,250,0.2);
+                                    border-radius:0.5rem;
+                                    background:transparent;
+                                    color:inherit;
+                                    cursor:pointer;
+                                    font-size:14px;
+                                "
+                            >
+                                Kopieren
+                            </button>
+                        </div>
+
+                        <script>
+                        function copyHistBoolean() {{
+                            const text = {copy_payload};
+
+                            if (!text) return;
+
+                            navigator.clipboard.writeText(text).then(() => {{
+                                const btn = document.querySelector("button");
+                                if (!btn) return;
+                                const old = btn.innerText;
+                                btn.innerText = "Kopiert!";
+                                setTimeout(() => btn.innerText = old, 900);
+                            }}).catch(() => {{
+                                const tmp = document.createElement("textarea");
+                                tmp.value = text;
+                                document.body.appendChild(tmp);
+                                tmp.select();
+                                document.execCommand("copy");
+                                document.body.removeChild(tmp);
+
+                                const btn = document.querySelector("button");
+                                if (!btn) return;
+                                const old = btn.innerText;
+                                btn.innerText = "Kopiert!";
+                                setTimeout(() => btn.innerText = old, 900);
+                            }});
+                        }}
+                        </script>
+                        """,
+                        height=44,
+                    )
                 with a2:
                     if st.button("In Builder laden", key="hist_load", use_container_width=True):
                         state = chosen.get("state", {})
@@ -1559,29 +1608,6 @@ with right_col:
 
 
         dlg_history()
-
-        if st.session_state.get("hist_copy_text"):
-            payload = json.dumps(st.session_state["hist_copy_text"])
-
-            components.html(
-                f"""
-                <script>
-                const text = {payload};
-
-                navigator.clipboard.writeText(text).catch(() => {{
-                    const tmp = parent.document.createElement('textarea');
-                    tmp.value = text;
-                    parent.document.body.appendChild(tmp);
-                    tmp.select();
-                    document.execCommand('copy');
-                    parent.document.body.removeChild(tmp);
-                }});
-                </script>
-                """,
-                height=0
-            )
-
-            st.session_state["hist_copy_text"] = ""
 
     if st.session_state.get("kw_reset_create_dialog"):
         st.session_state.pop("kw_create_name", None)
@@ -1887,4 +1913,4 @@ with right_col:
 
         edit_dialog()
             
-"hist_copy_text    "
+#a1
