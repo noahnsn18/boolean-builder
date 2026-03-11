@@ -1303,22 +1303,21 @@ with right_col:
         components.html(
             f"""
             <div id="kw-output-box" style="
-                min-height:120px;
-                padding:12px 14px;
-                border:1px solid rgba(49, 51, 63, 0.2);
-                border-radius:0.5rem;
-                background:rgb(240, 242, 246);
-                white-space:pre-wrap;
-                word-break:break-word;
-                overflow-wrap:anywhere;
-                cursor:pointer;
-                font-family:"Source Sans Pro", sans-serif;
-                font-size:0.875rem;
-                font-weight:400;
-                line-height:1.6;
-                color:rgb(49, 51, 63);
-                position:relative;
-                user-select:none;
+            min-height:120px;
+            padding:12px 14px;
+            border:1px solid rgba(49,51,63,0.2);
+            border-radius:0.5rem;
+            background:rgb(240,242,246);
+            white-space:pre-wrap;
+            word-break:break-word;
+            overflow-wrap:anywhere;
+            cursor:pointer;
+            font-family:var(--font), 'Source Sans Pro', sans-serif;
+            font-size:0.9rem;
+            line-height:1.6;
+            letter-spacing:0;
+            color:rgb(49,51,63);
+            position:relative;
             ">{boolean_string}</div>
 
             <script>
